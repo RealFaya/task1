@@ -2,20 +2,16 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Configuration;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Задание
 {
-	class Properties
+	class Propertie
 	{
-		public Dictionary<string, object[]> props;
+		public Dictionary<string, Entity<decimal>> props;
 
-		public Properties()
+		public Propertie()
 		{
-			props = new Dictionary<string, object[]>();
+			props = new Dictionary<string, Entity<decimal>>();
 
 			LoadConnectStrings(ConfigurationManager.AppSettings, ConfigurationManager.ConnectionStrings);
 		}
@@ -30,8 +26,13 @@ namespace Задание
 			for(int i = 1; i < ConnectionStrings.Count; i++)
 			{
 				Name = ConnectionStrings[i].Name;
-				props.Add(Name, new object[] { Convert.ToDecimal(AppSettings.Get(Name).Replace('.', ',')), ConnectionStrings[i].ConnectionString });
+				props.Add(Name, new Entity<decimal>(ConnectionStrings[i].ConnectionString, Convert.ToDecimal(AppSettings.Get(Name).Replace('.', ','))));
 			}
+		}
+
+		public static string GetUser()
+		{
+			return ConfigurationManager.AppSettings.Get("User");
 		}
 	}
 }

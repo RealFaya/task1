@@ -1,48 +1,66 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Configuration;
-using System.Collections.Specialized;
-using System.Runtime.InteropServices;
-using Npgsql;
-using System.Data;
-using System.Data.Common;
+using System.Net.Http.Headers;
+using System.Timers;
 
 namespace Задание
 {
 	class Program
 	{
+		static Timer timer;
+
+		static gGoogle google = new gGoogle();
+		static Propertie prop = new Propertie();
+
+		static readonly string Query = "select datname, pg_database_size(datname) / 1024.0 / 1024 / 1024 from pg_database";
+
 		static void Main(string[] args)
 		{
+			GoGoogel();
+			Console.WriteLine("Данные обновлены!\nОбновление данных произойдет через 10 с.\nЧтобы его отменить нажмите клавишу.");
+			StartTimer();
+			Console.ReadKey();
+
+			timer.Stop();
+			timer.Dispose();
+
+			Console.WriteLine("Обновление данных приостановлено.");
+			Console.ReadKey();
+		}
+
+		static void GoGoogel()
+		{
+			google.FindId(prop.props.FirstOrDefault().Key);
+
 			using(PostgreSQL psql = new PostgreSQL())
 			{
-				Properties prop = new Properties();
-				decimal TableSize, Size;
-				string Query = "select datname, pg_database_size(datname) / 1024.0 / 1024 / 1024 from pg_database";
+				decimal Size;
+				Dictionary<string, decimal> Result;
 
-				foreach(KeyValuePair<string, object[]> element in prop.props)
+				foreach(KeyValuePair<string, Entity<decimal>> element in prop.props)
 				{
-					Size = (decimal)element.Value[0];
-					psql.Connecting((string)element.Value[1]);
+					Size = element.Value.Size;
+					psql.Connecting(element.Value._String);
+					Result = psql.GetTableAndSize(Query, ref Size);
 
-					using(NpgsqlDataReader Reader = psql.ExecuteReader(Query))
-					{
-						foreach(DbDataRecord bdElement in Reader)
-						{
-							TableSize = bdElement.GetDecimal(1);
-							Size -= TableSize;
-
-							Console.WriteLine(string.Format("{0} | {1} - {2:N1}", element.Key, bdElement.GetString(0), TableSize));
-						}
-					}
-
-					Console.WriteLine(string.Format("{0} | Свободно: {1:N1}", element.Key, Size));
+					google.FillSheet(element.Key, Size, Result);
 				}
 			}
-			
-			Console.ReadKey();
+		}
+		
+		static void StartTimer()
+		{
+			timer = new Timer(10000);
+			timer.Elapsed += Timer_Elapsed;
+			timer.AutoReset = true;
+			timer.Enabled = true;
+		}
+
+		private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
+		{
+			GoGoogel();
+			Console.WriteLine("Данные обновлены.");
 		}
 	}
 }

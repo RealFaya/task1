@@ -1,12 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Задание
+﻿namespace Задание
 {
-	class Entity
+	class Entity<T>
 	{
+		public string _String;
+		public T Size;
+
+		public Entity(string _String, T Size)
+		{
+			this._String = _String;
+			this.Size = Size;
+		}
 	}
 }

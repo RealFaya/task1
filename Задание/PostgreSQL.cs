@@ -1,10 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Data.Common;
 
 namespace Задание
 {
@@ -35,6 +32,25 @@ namespace Задание
 
 				return reader;
 			}
+		}
+
+		public Dictionary<string, decimal> GetTableAndSize(string Query, ref decimal Size)
+		{
+			decimal TableSize;
+			Dictionary<string, decimal> Result = new Dictionary<string, decimal>();
+
+			using(NpgsqlDataReader Reader = ExecuteReader(Query))
+			{
+				foreach(DbDataRecord bdElement in Reader)
+				{
+					TableSize = bdElement.GetDecimal(1);
+					Size -= TableSize;
+
+					Result.Add(bdElement.GetString(0), TableSize);
+				}
+			}
+
+			return Result;
 		}
 
 		public void Dispose()
