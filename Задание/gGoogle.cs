@@ -17,15 +17,16 @@ namespace Задание
 	{
 		string SpreadsheetsId;
 
-		string[] Scopes = new string[] { DriveService.Scope.Drive };
-		string[] ScopesSheets = new string[] { SheetsService.Scope.Spreadsheets };
+		readonly string[] Scopes = new string[] { DriveService.Scope.Drive };
+		readonly string[] ScopesSheets = new string[] { SheetsService.Scope.Spreadsheets };
 
-		string AppName = "task";
-		string SpreadsheetsName = "Размер баз данных PostgreSQL";
+		readonly string AppName = "task";
+		readonly string SpreadsheetsName = "Размер баз данных PostgreSQL";
 
 		UserCredential userCredential;
-		UserCredential sheetCredential;
 		DriveService driveService;
+
+		UserCredential sheetCredential;
 		SheetsService sheetsService;
 
 		public gGoogle()
@@ -40,6 +41,12 @@ namespace Задание
 			sheetsService = GetSheetService(sheetCredential);
 		}
 
+		/// <summary>
+		/// Авторизация пользователя, и получение доступа к google drive (Токен авторизации)
+		/// </summary>
+		/// <param name="jsoneFile">Имя json файла</param>
+		/// <param name="CredentialPath">Путь где будет сохраняться файл</param>
+		/// <returns>Токен авторизации</returns>
 		UserCredential GetCredential(string jsoneFile, string CredentialPath)
 		{
 			using(FileStream file = new FileStream(jsoneFile, FileMode.Open, FileAccess.Read))
@@ -48,16 +55,31 @@ namespace Задание
 			}
 		}
 
+		/// <summary>
+		/// Служба google drive, для работы с диском
+		/// </summary>
+		/// <param name="Credential">Токен авторизации пользователя</param>
+		/// <returns>Служба google drive</returns>
 		DriveService GetDriveService(UserCredential Credential)
 		{
 			return new DriveService(GetInitializer(Credential));
 		}
 
+		/// <summary>
+		/// Служба google sheet, для работы с таблицами
+		/// </summary>
+		/// <param name="Credential">Токен авторизации для работы с таблицами</param>
+		/// <returns>Служба google sheet</returns>
 		SheetsService GetSheetService(UserCredential Credential)
 		{
 			return new SheetsService(GetInitializer(Credential));
 		}
 
+		/// <summary>
+		/// Инициализация токена для служб
+		/// </summary>
+		/// <param name="Credential">Токен авторизации</param>
+		/// <returns></returns>
 		BaseClientService.Initializer GetInitializer(UserCredential Credential)
 		{
 			return new BaseClientService.Initializer()
@@ -67,6 +89,10 @@ namespace Задание
 			};
 		}
 
+		/// <summary>
+		/// Получение Id файла на google drive в который будет происходить запись данных
+		/// </summary>
+		/// <param name="FirstSheetName">Название первого листа если файла нет на диске</param>
 		public void FindId(string FirstSheetName)
 		{
 			foreach(File file in driveService.Files.List().Execute().Files)
@@ -82,28 +108,30 @@ namespace Задание
 			SpreadsheetsId = CreateFile(FirstSheetName);
 		}
 
+		/// <summary>
+		/// Создание файла на google drive
+		/// </summary>
+		/// <param name="SheetName">Название первого листа</param>
+		/// <returns>Id файла</returns>
 		string CreateFile(string SheetName)
 		{
 			Spreadsheet myNewSheet = new Spreadsheet();
 			myNewSheet.Properties = new SpreadsheetProperties();
 			myNewSheet.Properties.Title = SpreadsheetsName;
 
-			Sheet sheet = CreateSheet(SheetName);
+			Sheet sheet = new Sheet();
+			sheet.Properties = new SheetProperties();
+			sheet.Properties.Title = SheetName;
 
 			myNewSheet.Sheets = new List<Sheet>() { sheet };
 
 			return sheetsService.Spreadsheets.Create(myNewSheet).Execute().SpreadsheetId;
 		}
 
-		Sheet CreateSheet(string Title)
-		{
-			Sheet sheet = new Sheet();
-			sheet.Properties = new SheetProperties();
-			sheet.Properties.Title = Title;
-
-			return sheet;
-		}
-
+		/// <summary>
+		/// Добавление нового листа в таблицу
+		/// </summary>
+		/// <param name="Title">Имя добавляемого листа</param>
 		void AddSheet(string Title)
 		{
 			Request request = new Request
@@ -126,15 +154,24 @@ namespace Задание
 			sheetsService.Spreadsheets.BatchUpdate(body, SpreadsheetsId).Execute();
 		}
 
+		/// <summary>
+		/// Очистка листа от старой информации
+		/// </summary>
+		/// <param name="sheet"></param>
 		void ClearSheet(string sheet)
 		{
 			string range = string.Format("'{0}'!A1:Z", sheet);
 			ClearValuesRequest requestBody = new ClearValuesRequest();
 
-			var deleteRequest = sheetsService.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range);
-			deleteRequest.Execute();
+			sheetsService.Spreadsheets.Values.Clear(requestBody, SpreadsheetsId, range).Execute();
 		}
 
+		/// <summary>
+		/// Заполнение листа данными
+		/// </summary>
+		/// <param name="Server">Имя листа</param>
+		/// <param name="Size">Остаточный объем на диске (в GB)</param>
+		/// <param name="Info">Имя таблицы - размер таблицы (в GB)</param>
 		public void FillSheet(string Server, decimal Size, Dictionary<string, decimal> Info)
 		{
 			if(FindSheet(Server))
@@ -157,6 +194,11 @@ namespace Задание
 			FillRow(new object[] { Server, "Свободно", Math.Round(Size, 1), Date }, Server);
 		}
 
+		/// <summary>
+		/// Запись данных в стоку
+		/// </summary>
+		/// <param name="obj">Массив значений</param>
+		/// <param name="Sheet">Имя листа</param>
 		void FillRow(object[] obj, string Sheet)
 		{
 			List<object> objList = obj.ToList();
@@ -169,6 +211,11 @@ namespace Задание
 			appendRequest.Execute();
 		}
 
+		/// <summary>
+		/// Поиск листа в файле
+		/// </summary>
+		/// <param name="Sheet">Имя лист</param>
+		/// <returns>true - лист есть в файле / false - листа нет в файле</returns>
 		bool FindSheet(string Sheet)
 		{
 			SpreadsheetsResource.GetRequest srgrSheetsName = sheetsService.Spreadsheets.Get(SpreadsheetsId);

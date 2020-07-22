@@ -9,6 +9,7 @@ namespace Задание
 	class Program
 	{
 		static Timer timer;
+		static readonly int Interval = 10;
 
 		static gGoogle google = new gGoogle();
 		static Propertie prop = new Propertie();
@@ -18,7 +19,7 @@ namespace Задание
 		static void Main(string[] args)
 		{
 			GoGoogel();
-			Console.WriteLine("Данные обновлены!\nОбновление данных произойдет через 10 с.\nЧтобы его отменить нажмите клавишу.");
+			Console.WriteLine("Данные обновлены.\nОбновление данных произойдет через {0} с.\nЧтобы его отменить нажмите любую клавишу.", Interval);
 			StartTimer();
 			Console.ReadKey();
 
@@ -28,7 +29,32 @@ namespace Задание
 			Console.WriteLine("Обновление данных приостановлено.");
 			Console.ReadKey();
 		}
+		
+		/// <summary>
+		/// Инициализация и запуск таймера
+		/// </summary>
+		static void StartTimer()
+		{
+			timer = new Timer(Interval * 1000);
+			timer.Elapsed += Timer_Elapsed;
+			timer.AutoReset = true;
+			timer.Enabled = true;
+		}
 
+		/// <summary>
+		/// Событие по истечению времени таймера
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		static void Timer_Elapsed(object sender, ElapsedEventArgs e)
+		{
+			GoGoogel();
+			Console.WriteLine("Данные обновлены.");
+		}
+
+		/// <summary>
+		/// Запуск обновления данных в таблице
+		/// </summary>
 		static void GoGoogel()
 		{
 			google.FindId(prop.props.FirstOrDefault().Key);
@@ -47,20 +73,6 @@ namespace Задание
 					google.FillSheet(element.Key, Size, Result);
 				}
 			}
-		}
-		
-		static void StartTimer()
-		{
-			timer = new Timer(10000);
-			timer.Elapsed += Timer_Elapsed;
-			timer.AutoReset = true;
-			timer.Enabled = true;
-		}
-
-		private static void Timer_Elapsed(object sender, ElapsedEventArgs e)
-		{
-			GoGoogel();
-			Console.WriteLine("Данные обновлены.");
 		}
 	}
 }

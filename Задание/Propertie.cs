@@ -17,9 +17,9 @@ namespace Задание
 		}
 
 		/// <summary>
-		/// Запись строк подключения к бд и объема диска
+		/// Запись строк подключения к бд и объема диска из конфигурационного файла
 		/// </summary>
-		public void LoadConnectStrings(NameValueCollection AppSettings, ConnectionStringSettingsCollection ConnectionStrings)
+		void LoadConnectStrings(NameValueCollection AppSettings, ConnectionStringSettingsCollection ConnectionStrings)
 		{
 			string Name;
 
@@ -30,6 +30,10 @@ namespace Задание
 			}
 		}
 
+		/// <summary>
+		/// Получение пользователя из поля User
+		/// </summary>
+		/// <returns></returns>
 		public static string GetUser()
 		{
 			return ConfigurationManager.AppSettings.Get("User");

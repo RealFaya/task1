@@ -12,6 +12,10 @@ namespace Задание
 
 		public PostgreSQL() { }
 
+		/// <summary>
+		/// Подключение к базе
+		/// </summary>
+		/// <param name="stringConnection">Строка подключения к базе</param>
 		public void Connecting(string stringConnection)
 		{
 			if(Connection != null)
@@ -24,16 +28,12 @@ namespace Задание
 			Connection.Open();
 		}
 
-		public NpgsqlDataReader ExecuteReader(string Query)
-		{
-			using(NpgsqlCommand command = new NpgsqlCommand(Query, Connection))
-			{
-				NpgsqlDataReader reader = command.ExecuteReader();
-
-				return reader;
-			}
-		}
-
+		/// <summary>
+		/// Получение имен таблиц и размера
+		/// </summary>
+		/// <param name="Query">Запрос</param>
+		/// <param name="Size">Объем места на диске</param>
+		/// <returns>Имя таблицы - размер таблицы</returns>
 		public Dictionary<string, decimal> GetTableAndSize(string Query, ref decimal Size)
 		{
 			decimal TableSize;
@@ -53,6 +53,24 @@ namespace Задание
 			return Result;
 		}
 
+		/// <summary>
+		/// Получение данных с базы
+		/// </summary>
+		/// <param name="Query">Запрос</param>
+		/// <returns>Результат запроса</returns>
+		NpgsqlDataReader ExecuteReader(string Query)
+		{
+			using(NpgsqlCommand command = new NpgsqlCommand(Query, Connection))
+			{
+				NpgsqlDataReader reader = command.ExecuteReader();
+
+				return reader;
+			}
+		}
+
+		/// <summary>
+		/// Освобождение данных
+		/// </summary>
 		public void Dispose()
 		{
 			Connection.Close();
