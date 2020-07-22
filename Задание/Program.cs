@@ -9,7 +9,7 @@ namespace Задание
 	class Program
 	{
 		static Timer timer;
-		static readonly int Interval = 10;
+		static readonly int Interval = 20;
 
 		static gGoogle google = new gGoogle();
 		static Propertie prop = new Propertie();

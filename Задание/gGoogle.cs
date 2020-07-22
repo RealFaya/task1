@@ -206,7 +206,7 @@ namespace Задание
 			ValueRange valueRange = new ValueRange();
 			valueRange.Values = new List<IList<object>> { objList };
 
-			var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, string.Format("'{0}'!A:D", Sheet));
+			var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, string.Format("'{0}'!A:Z", Sheet));
 			appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
 			appendRequest.Execute();
 		}
