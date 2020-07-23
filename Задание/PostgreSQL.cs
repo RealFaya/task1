@@ -1,6 +1,7 @@
 ﻿using Npgsql;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 
 namespace Задание
@@ -8,7 +9,6 @@ namespace Задание
 	class PostgreSQL : IDisposable
 	{
 		NpgsqlConnection Connection;
-		public string ConnectionString;
 
 		public PostgreSQL() { }
 
@@ -18,12 +18,8 @@ namespace Задание
 		/// <param name="stringConnection">Строка подключения к базе</param>
 		public void Connecting(string stringConnection)
 		{
-			if(Connection != null)
-			{
-				Dispose();
-			}
+			Dispose();
 
-			ConnectionString = stringConnection;
 			Connection = new NpgsqlConnection(stringConnection);
 			Connection.Open();
 		}
@@ -34,16 +30,16 @@ namespace Задание
 		/// <param name="Query">Запрос</param>
 		/// <param name="Size">Объем места на диске</param>
 		/// <returns>Имя таблицы - размер таблицы</returns>
-		public Dictionary<string, decimal> GetTableAndSize(string Query, ref decimal Size)
+		public Dictionary<string, double> GetTableAndSize(string Query, ref double Size)
 		{
-			decimal TableSize;
-			Dictionary<string, decimal> Result = new Dictionary<string, decimal>();
+			double TableSize;
+			Dictionary<string, double> Result = new Dictionary<string, double>();
 
 			using(NpgsqlDataReader Reader = ExecuteReader(Query))
 			{
 				foreach(DbDataRecord bdElement in Reader)
 				{
-					TableSize = bdElement.GetDecimal(1);
+					TableSize = Convert.ToDouble(bdElement.GetDecimal(1));
 					Size -= TableSize;
 
 					Result.Add(bdElement.GetString(0), TableSize);
@@ -73,7 +69,11 @@ namespace Задание
 		/// </summary>
 		public void Dispose()
 		{
-			Connection.Close();
+			if(Connection.State == ConnectionState.Open)
+			{
+				Connection.Close();
+			}
+
 			Connection = null;
 		}
 	}

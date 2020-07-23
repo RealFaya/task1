@@ -61,10 +61,10 @@ namespace Задание
 
 			using(PostgreSQL psql = new PostgreSQL())
 			{
-				decimal Size;
-				Dictionary<string, decimal> Result;
+				double Size;
+				Dictionary<string, double> Result;
 
-				foreach(KeyValuePair<string, Entity<decimal>> element in prop.props)
+				foreach(KeyValuePair<string, Entity<double>> element in prop.props)
 				{
 					Size = element.Value.Size;
 					psql.Connecting(element.Value._String);

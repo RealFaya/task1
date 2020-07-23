@@ -7,11 +7,11 @@ namespace Задание
 {
 	class Propertie
 	{
-		public Dictionary<string, Entity<decimal>> props;
+		public Dictionary<string, Entity<double>> props;
 
 		public Propertie()
 		{
-			props = new Dictionary<string, Entity<decimal>>();
+			props = new Dictionary<string, Entity<double>>();
 
 			LoadConnectStrings(ConfigurationManager.AppSettings, ConfigurationManager.ConnectionStrings);
 		}
@@ -26,7 +26,7 @@ namespace Задание
 			for(int i = 1; i < ConnectionStrings.Count; i++)
 			{
 				Name = ConnectionStrings[i].Name;
-				props.Add(Name, new Entity<decimal>(ConnectionStrings[i].ConnectionString, Convert.ToDecimal(AppSettings.Get(Name).Replace('.', ','))));
+				props.Add(Name, new Entity<double>(ConnectionStrings[i].ConnectionString, Convert.ToDouble(AppSettings.Get(Name).Replace('.', ','))));
 			}
 		}
 

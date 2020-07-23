@@ -172,7 +172,7 @@ namespace Задание
 		/// <param name="Server">Имя листа</param>
 		/// <param name="Size">Остаточный объем на диске (в GB)</param>
 		/// <param name="Info">Имя таблицы - размер таблицы (в GB)</param>
-		public void FillSheet(string Server, decimal Size, Dictionary<string, decimal> Info)
+		public void FillSheet(string Server, double Size, Dictionary<string, double> Info)
 		{
 			if(FindSheet(Server))
 			{
@@ -186,7 +186,7 @@ namespace Задание
 			string Date = DateTime.Now.ToShortDateString();
 			FillRow(new object[] { "Сервер", "База данных", "Размер в ГБ", "Дата обновления" }, Server);
 
-			foreach(KeyValuePair<string, decimal> element in Info)
+			foreach(KeyValuePair<string, double> element in Info)
 			{
 				FillRow(new object[] { Server, element.Key, Math.Round(element.Value, 1), Date }, Server);
 			}
