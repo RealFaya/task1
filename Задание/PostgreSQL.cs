@@ -18,7 +18,10 @@ namespace Задание
 		/// <param name="stringConnection">Строка подключения к базе</param>
 		public void Connecting(string stringConnection)
 		{
-			Dispose();
+			if(Connection != null)
+			{
+				Dispose();
+			}
 
 			Connection = new NpgsqlConnection(stringConnection);
 			Connection.Open();
@@ -47,6 +50,20 @@ namespace Задание
 			}
 
 			return Result;
+		}
+
+		public DataTable GetDataTable(string Query)
+		{
+			using(NpgsqlCommand command = new NpgsqlCommand(Query, Connection))
+			{
+				DataTable Result = new DataTable();
+				NpgsqlDataAdapter dataAdapter = new NpgsqlDataAdapter();
+
+				dataAdapter.SelectCommand = command;
+				dataAdapter.Fill(Result);
+
+				return Result;
+			}
 		}
 
 		/// <summary>

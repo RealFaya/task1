@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Timers;
@@ -11,10 +12,10 @@ namespace Задание
 		static Timer timer;
 		static readonly int Interval = 20;
 
-		static gGoogle google = new gGoogle();
 		static Propertie prop = new Propertie();
+		static gGoogle google = new gGoogle(prop);
 
-		static readonly string Query = "select datname, pg_database_size(datname) / 1024.0 / 1024 / 1024 from pg_database";
+		static readonly string Query = "select datname, (pg_database_size(datname)  / 1024.0 / 1024 / 1024) as size from pg_database";
 
 		static void Main(string[] args)
 		{
@@ -57,22 +58,38 @@ namespace Задание
 		/// </summary>
 		static void GoGoogel()
 		{
-			google.FindId(prop.props.FirstOrDefault().Key);
-
 			using(PostgreSQL psql = new PostgreSQL())
 			{
-				double Size;
 				Dictionary<string, double> Result;
 
-				foreach(KeyValuePair<string, Entity<double>> element in prop.props)
+				foreach(KeyValuePair<string, Entity> element in prop.props)
 				{
-					Size = element.Value.Size;
-					psql.Connecting(element.Value._String);
-					Result = psql.GetTableAndSize(Query, ref Size);
+					psql.Connecting(element.Value.ConnectingString);
 
-					google.FillSheet(element.Key, Size, Result);
+					Result = GetTableAndSize(psql.GetDataTable(Query));
+
+					google.FillSheet(element.Key,
+						element.Value.DiskSize - Result.Sum(x => x.Value),
+						Result);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Получение из DataTable Название таблиц и их размер
+		/// </summary>
+		/// <param name="Table"></param>
+		/// <returns></returns>
+		static Dictionary<string, double> GetTableAndSize(DataTable Table)
+		{
+			Dictionary<string, double> Result = new Dictionary<string, double>();
+
+			foreach(DataRow element in Table.Rows)
+			{
+				Result.Add((string)element["datname"], (double)Math.Round((decimal)element["size"], 1));
+			}
+
+			return Result;
 		}
 	}
 }

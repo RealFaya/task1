@@ -10,6 +10,9 @@ using System.Linq;
 using System.Threading;
 using Google.Apis.Sheets.v4;
 using Google.Apis.Sheets.v4.Data;
+using Google.Apis.Util;
+using System.Net;
+using System.CodeDom;
 
 namespace Задание
 {
@@ -29,7 +32,7 @@ namespace Задание
 		UserCredential sheetCredential;
 		SheetsService sheetsService;
 
-		public gGoogle()
+		public gGoogle(Propertie porp)
 		{
 			string CredentialPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 			CredentialPath = Path.Combine(CredentialPath, "driveApiCredentials", "credentials.json");
@@ -39,6 +42,8 @@ namespace Задание
 
 			sheetCredential = GetCredential("credentials.json", CredentialPath);
 			sheetsService = GetSheetService(sheetCredential);
+
+			FindId(porp.props.FirstOrDefault().Key);
 		}
 
 		/// <summary>
@@ -51,7 +56,7 @@ namespace Задание
 		{
 			using(FileStream file = new FileStream(jsoneFile, FileMode.Open, FileAccess.Read))
 			{
-				return GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(file).Secrets, Scopes, Propertie.GetUser(), CancellationToken.None, new FileDataStore(CredentialPath, true)).Result;
+				return GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(file).Secrets, Scopes, Propertie.User, CancellationToken.None, new FileDataStore(CredentialPath, true)).Result;
 			}
 		}
 
@@ -92,20 +97,10 @@ namespace Задание
 		/// <summary>
 		/// Получение Id файла на google drive в который будет происходить запись данных
 		/// </summary>
-		/// <param name="FirstSheetName">Название первого листа если файла нет на диске</param>
-		public void FindId(string FirstSheetName)
+		/// <param name="FirstSheetName">Название первого листа если файла нет на диске то он создается</param>
+		void FindId(string FirstSheetName)
 		{
-			foreach(File file in driveService.Files.List().Execute().Files)
-			{
-				if(file.Name == SpreadsheetsName)
-				{
-					SpreadsheetsId = file.Id;
-
-					return;
-				}
-			}
-
-			SpreadsheetsId = CreateFile(FirstSheetName);
+			SpreadsheetsId = driveService.Files.List().Execute().Files.Where(x => x.Name == SpreadsheetsName)?.FirstOrDefault()?.Id ?? CreateFile(FirstSheetName);
 		}
 
 		/// <summary>
@@ -144,11 +139,10 @@ namespace Задание
 					}
 				}
 			};
-			List<Request> requests = new List<Request> { request };
-
-			BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest()
+			
+			BatchUpdateSpreadsheetRequest body = new BatchUpdateSpreadsheetRequest
 			{
-				Requests = requests
+				Requests = new List<Request> { request }
 			};
 
 			sheetsService.Spreadsheets.BatchUpdate(body, SpreadsheetsId).Execute();
@@ -170,58 +164,96 @@ namespace Задание
 		/// Заполнение листа данными
 		/// </summary>
 		/// <param name="Server">Имя листа</param>
-		/// <param name="Size">Остаточный объем на диске (в GB)</param>
+		/// <param name="DiskSize">Остаточный объем на диске (в GB)</param>
 		/// <param name="Info">Имя таблицы - размер таблицы (в GB)</param>
-		public void FillSheet(string Server, double Size, Dictionary<string, double> Info)
+		public void FillSheet(string Server, double DiskSize, Dictionary<string, double> Info)
 		{
-			if(FindSheet(Server))
+			int? SheetId = FindSheet(Server);
+
+			if(SheetId != null)
 			{
 				ClearSheet(Server);
 			}
 			else
 			{
 				AddSheet(Server);
+				SheetId = FindSheet(Server);
 			}
 
+			List<Request> requests = new List<Request>();
+			List<RowData> rowDatas = new List<RowData>();
 			string Date = DateTime.Now.ToShortDateString();
-			FillRow(new object[] { "Сервер", "База данных", "Размер в ГБ", "Дата обновления" }, Server);
+
+			rowDatas.Add(new RowData { Values = AddCellsInRow("Сервер", "База данных", "Размер в ГБ", "Дата обновления") });
 
 			foreach(KeyValuePair<string, double> element in Info)
 			{
-				FillRow(new object[] { Server, element.Key, Math.Round(element.Value, 1), Date }, Server);
+				rowDatas.Add(new RowData { Values = AddCellsInRow(Server, element.Key, element.Value, Date) });
 			}
 
-			FillRow(new object[] { Server, "Свободно", Math.Round(Size, 1), Date }, Server);
+			rowDatas.Add(new RowData { Values = AddCellsInRow(Server, "Свободно", DiskSize, Date) });
+
+			requests.Add(new Request
+			{
+				AppendCells = new AppendCellsRequest
+				{
+					Rows = rowDatas,
+					SheetId = SheetId,
+					Fields = "userEnteredValue"
+				}
+			});
+
+			BatchUpdateSpreadsheetRequest batchUpdate = new BatchUpdateSpreadsheetRequest
+			{
+				Requests = requests
+			};
+
+			sheetsService.Spreadsheets.BatchUpdate(batchUpdate, SpreadsheetsId).Execute();
 		}
 
 		/// <summary>
-		/// Запись данных в стоку
+		/// Добавление значений в ячейки
 		/// </summary>
-		/// <param name="obj">Массив значений</param>
-		/// <param name="Sheet">Имя листа</param>
-		void FillRow(object[] obj, string Sheet)
+		/// <param name="args"></param>
+		/// <returns></returns>
+		List<CellData> AddCellsInRow(params object[] args)
 		{
-			List<object> objList = obj.ToList();
+			ExtendedValue value;
+			List<CellData> values = new List<CellData>();
 
-			ValueRange valueRange = new ValueRange();
-			valueRange.Values = new List<IList<object>> { objList };
+			foreach(object element in args)
+			{
+				value = new ExtendedValue();
 
-			var appendRequest = sheetsService.Spreadsheets.Values.Append(valueRange, SpreadsheetsId, string.Format("'{0}'!A:Z", Sheet));
-			appendRequest.ValueInputOption = SpreadsheetsResource.ValuesResource.AppendRequest.ValueInputOptionEnum.USERENTERED;
-			appendRequest.Execute();
+				if(element.GetType().Equals(typeof(double)))
+				{
+					value.NumberValue = (double)element;
+				}
+				else
+				{
+					value.StringValue = element.ToString();
+				}
+				
+				values.Add(new CellData
+				{
+					UserEnteredValue = value
+				});
+			}
+
+			return values;
 		}
 
 		/// <summary>
 		/// Поиск листа в файле
 		/// </summary>
 		/// <param name="Sheet">Имя лист</param>
-		/// <returns>true - лист есть в файле / false - листа нет в файле</returns>
-		bool FindSheet(string Sheet)
+		/// <returns>id листа, если нету то null</returns>
+		int? FindSheet(string Sheet)
 		{
 			SpreadsheetsResource.GetRequest srgrSheetsName = sheetsService.Spreadsheets.Get(SpreadsheetsId);
 			Spreadsheet sSheetsName = srgrSheetsName.Execute();
 
-			return sSheetsName.Sheets.Where(x => x.Properties.Title == Sheet).Count() > 0;
+			return sSheetsName.Sheets.Where(x => x.Properties.Title == Sheet)?.FirstOrDefault()?.Properties.SheetId;
 		}
 	}
 }

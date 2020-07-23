@@ -1,14 +1,16 @@
-﻿namespace Задание
-{
-	class Entity<T>
-	{
-		public string _String;
-		public T Size;
+﻿using System.Dynamic;
 
-		public Entity(string _String, T Size)
+namespace Задание
+{
+	class Entity
+	{
+		public string ConnectingString;
+		public double DiskSize;
+
+		public Entity(string ConnectingString, double DiskSize)
 		{
-			this._String = _String;
-			this.Size = Size;
+			this.ConnectingString = ConnectingString;
+			this.DiskSize = DiskSize;
 		}
 	}
 }

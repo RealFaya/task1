@@ -7,36 +7,29 @@ namespace Задание
 {
 	class Propertie
 	{
-		public Dictionary<string, Entity<double>> props;
+		public static string User;
+		public Dictionary<string, Entity> props = new Dictionary<string, Entity>();
 
 		public Propertie()
 		{
-			props = new Dictionary<string, Entity<double>>();
+			NameValueCollection AppSettings = ConfigurationManager.AppSettings;
 
-			LoadConnectStrings(ConfigurationManager.AppSettings, ConfigurationManager.ConnectionStrings);
+			User = AppSettings.Get("User");
+			LoadConfig(AppSettings, ConfigurationManager.ConnectionStrings);
 		}
 
 		/// <summary>
 		/// Запись строк подключения к бд и объема диска из конфигурационного файла
 		/// </summary>
-		void LoadConnectStrings(NameValueCollection AppSettings, ConnectionStringSettingsCollection ConnectionStrings)
+		void LoadConfig(NameValueCollection AppSettings, ConnectionStringSettingsCollection Connectiongs)
 		{
 			string Name;
-
-			for(int i = 1; i < ConnectionStrings.Count; i++)
+			
+			for(int i = 1; i < Connectiongs.Count; i++)
 			{
-				Name = ConnectionStrings[i].Name;
-				props.Add(Name, new Entity<double>(ConnectionStrings[i].ConnectionString, Convert.ToDouble(AppSettings.Get(Name).Replace('.', ','))));
+				Name = Connectiongs[i].Name;
+				props.Add(Name, new Entity(Connectiongs[i].ConnectionString, Convert.ToDouble(AppSettings.Get(Name).Replace('.', ','))));
 			}
-		}
-
-		/// <summary>
-		/// Получение пользователя из поля User
-		/// </summary>
-		/// <returns></returns>
-		public static string GetUser()
-		{
-			return ConfigurationManager.AppSettings.Get("User");
 		}
 	}
 }
