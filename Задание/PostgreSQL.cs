@@ -53,7 +53,7 @@ namespace Задание
 		}
 
 		/// <summary>
-		/// Позучение данных в DataTable
+		/// Получение данных в DataTable
 		/// </summary>
 		/// <param name="Query"></param>
 		/// <returns></returns>

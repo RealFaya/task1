@@ -37,10 +37,10 @@ namespace Задание
 			string CredentialPath = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
 			CredentialPath = Path.Combine(CredentialPath, "driveApiCredentials", "credentials.json");
 
-			userCredential = GetCredential("client_secret.json", CredentialPath);
+			userCredential = GetCredential("client_secret.json", CredentialPath, Scopes);
 			driveService = GetDriveService(userCredential);
 
-			sheetCredential = GetCredential("credentials.json", CredentialPath);
+			sheetCredential = GetCredential("credentials.json", CredentialPath, ScopesSheets);
 			sheetsService = GetSheetService(sheetCredential);
 
 			FindId(porp.props.FirstOrDefault().Key);
@@ -51,12 +51,13 @@ namespace Задание
 		/// </summary>
 		/// <param name="jsoneFile">Имя json файла</param>
 		/// <param name="CredentialPath">Путь где будет сохраняться файл</param>
+		/// <param name="scopes">scopes</param>
 		/// <returns>Токен авторизации</returns>
-		UserCredential GetCredential(string jsoneFile, string CredentialPath)
+		UserCredential GetCredential(string jsoneFile, string CredentialPath, string[] scopes)
 		{
 			using(FileStream file = new FileStream(jsoneFile, FileMode.Open, FileAccess.Read))
 			{
-				return GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(file).Secrets, Scopes, Propertie.User, CancellationToken.None, new FileDataStore(CredentialPath, true)).Result;
+				return GoogleWebAuthorizationBroker.AuthorizeAsync(GoogleClientSecrets.Load(file).Secrets, scopes, Propertie.User, CancellationToken.None, new FileDataStore(CredentialPath, true)).Result;
 			}
 		}
 
