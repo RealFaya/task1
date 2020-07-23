@@ -52,6 +52,11 @@ namespace Задание
 			return Result;
 		}
 
+		/// <summary>
+		/// Позучение данных в DataTable
+		/// </summary>
+		/// <param name="Query"></param>
+		/// <returns></returns>
 		public DataTable GetDataTable(string Query)
 		{
 			using(NpgsqlCommand command = new NpgsqlCommand(Query, Connection))
