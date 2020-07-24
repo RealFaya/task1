@@ -28,7 +28,11 @@ namespace Задание
 			for(int i = 1; i < Connectiongs.Count; i++)
 			{
 				Name = Connectiongs[i].Name;
-				props.Add(Name, new Entity(Connectiongs[i].ConnectionString, Convert.ToDouble(AppSettings.Get(Name).Replace('.', ','))));
+
+				if(!props.ContainsKey(Name))
+				{
+					props.Add(Name, new Entity(Connectiongs[i].ConnectionString, Convert.ToDouble(AppSettings.Get(Name).Replace('.', ','))));
+				}
 			}
 		}
 	}
