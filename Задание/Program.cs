@@ -19,7 +19,7 @@ namespace Задание
 
 		static void Main(string[] args)
 		{
-			GoGoogel();
+			GoGoogle();
 			Console.WriteLine("Данные обновлены.\nОбновление данных произойдет через {0} с.\nЧтобы его отменить нажмите любую клавишу.", Interval);
 			StartTimer();
 			Console.ReadKey();
@@ -49,14 +49,14 @@ namespace Задание
 		/// <param name="e"></param>
 		static void Timer_Elapsed(object sender, ElapsedEventArgs e)
 		{
-			GoGoogel();
+			GoGoogle();
 			Console.WriteLine("Данные обновлены.");
 		}
 
 		/// <summary>
 		/// Запуск обновления данных в таблице
 		/// </summary>
-		static void GoGoogel()
+		static void GoGoogle()
 		{
 			using(PostgreSQL psql = new PostgreSQL())
 			{
